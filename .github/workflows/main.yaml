@@ -7,6 +7,7 @@ on:
     branches: [main]
 
 env:
+  POETRY_INSTALLER_PARALLEL: "false"
   VIRTUALENV_ACTIVATORS: "bash,python"
 
 jobs:
@@ -76,7 +77,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry check
-          poetry install || (pip install "python-discovery>=1.4" && poetry install)
+          poetry install
 
       - name: Run package unit tests
         run: makim ${{ matrix.project }}.unittests
@@ -121,7 +122,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry check
-          poetry install || (pip install "python-discovery>=1.4" && poetry install)
+          poetry install
 
       - name: Run compiled Arx tests
         run: makim arx.test-compiled
@@ -137,6 +138,34 @@ jobs:
 
       - name: Run AIX syntax manifest checks
         run: makim aix.check-syntax
+
+  wheel-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    concurrency:
+      group: ci-wheel-smoke-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniconda-version: "latest"
+          environment-file: conda/dev.yaml
+          channels: conda-forge,nodefaults
+          activate-environment: arx
+          auto-update-conda: true
+          conda-solver: libmamba
+          python-version: "3.10"
+
+      - name: Build and test installed package artifacts
+        run: makim all.wheel-smoke
 
   linter:
     runs-on: ubuntu-latest
@@ -166,7 +195,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry config virtualenvs.create false
-          poetry install || (pip install "python-discovery>=1.4" && poetry install)
+          poetry install
 
       - name: Run style checks
         if: success() || failure()
