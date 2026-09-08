@@ -9,7 +9,8 @@ dependencies:
   - pip
   - poetry >=1.5
   - python
-  - nodejs # used by semantic-release
+  - virtualenv >=20.26.6,<21
+  - nodejs >=24.10,<25 # used by semantic-release
   - shellcheck
   - pip
   - pip:
